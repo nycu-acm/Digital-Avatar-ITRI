@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Avatar Chat Interface</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary-color: #8b5cf6;
+            --accent-color: #06b6d4;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --background-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --card-bg: rgba(255, 255, 255, 0.95);
+            --card-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --text-primary: #1f2937;
+            --text-secondary: #6b7280;
+            --border-radius: 16px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--background-gradient);
+            min-height: 100vh;
+            color: var(--text-primary);
+            overflow-x: hidden;
+        }
+
+
+        /* Main container */
+        .dashboard-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 2rem;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 0.5rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            color: white;
+            font-weight: 400;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Glass card effect */
+        .glass-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--border-radius);
+            box-shadow: var(--card-shadow);
+            transition: var(--transition);
+        }
+
+
+        /* Video section */
+        .video-section {
+            margin-bottom: 2rem;
+        }
+
+        .video-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            background: #000;
+            box-shadow: var(--card-shadow);
+        }
+
+        .video-container video {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+
+        /* Control panel */
+        .control-panel {
+            padding: 2rem;
+        }
+
+        .control-section {
+            margin-bottom: 2rem;
+        }
+
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .section-title i {
+            color: var(--primary-color);
+        }
+
+        /* Connection controls */
+        .connection-controls {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-bottom: 2rem;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1rem;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 50px;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--danger-color);
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.connected {
+            background: var(--success-color);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Modern buttons */
+        .btn-modern {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-modern::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: var(--transition);
+        }
+
+        .btn-modern:hover::before {
+            left: 100%;
+        }
+
+        .btn-primary-modern {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            color: white;
+        }
+
+        .btn-primary-modern:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(99, 102, 241, 0.3);
+        }
+
+        .btn-success-modern {
+            background: linear-gradient(135deg, var(--success-color), #059669);
+            color: white;
+        }
+
+        .btn-danger-modern {
+            background: linear-gradient(135deg, var(--danger-color), #dc2626);
+            color: white;
+        }
+
+        /* Chat interface */
+        .chat-container {
+            height: 400px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+            background: var(--glass-bg);
+            border-radius: var(--border-radius);
+            margin-bottom: 1rem;
+            border: 1px solid var(--glass-border);
+        }
+
+        .chat-message {
+            margin-bottom: 1rem;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message-bubble {
+            max-width: 80%;
+            padding: 0.75rem 1rem;
+            border-radius: 18px;
+            font-size: 0.9rem;
+            line-height: 1.4;
+            position: relative;
+        }
+
+        .user-message .message-bubble {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            color: white;
+            margin-left: auto;
+            border-bottom-right-radius: 4px;
+        }
+
+        .ai-message .message-bubble {
+            background: var(--card-bg);
+            color: var(--text-primary);
+            border: 1px solid var(--glass-border);
+            border-bottom-left-radius: 4px;
+        }
+
+        .system-message .message-bubble {
+            background: var(--glass-bg);
+            color: var(--text-secondary);
+            font-style: italic;
+            text-align: center;
+            margin: 0 auto;
+            font-size: 0.8rem;
+        }
+
+        /* Voice input */
+        .voice-input-section {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--border-radius);
+        }
+
+        .voice-record-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: none;
+            background: linear-gradient(135deg, var(--danger-color), #dc2626);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        .voice-record-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 20px rgba(239, 68, 68, 0.3);
+        }
+
+        .voice-record-btn:active {
+            transform: scale(0.95);
+        }
+
+        .voice-record-btn.recording {
+            animation: recording-pulse 1s infinite;
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+        }
+
+        @keyframes recording-pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            50% { box-shadow: 0 0 0 20px rgba(239, 68, 68, 0); }
+        }
+
+        .voice-record-btn i {
+            font-size: 24px;
+            z-index: 1;
+        }
+
+        .voice-instructions {
+            flex: 1;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* Text input */
+        .text-input-section {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .modern-input {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            border: 2px solid var(--glass-border);
+            border-radius: 50px;
+            background: var(--card-bg);
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            transition: var(--transition);
+        }
+
+        .modern-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .send-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: none;
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+            cursor: pointer;
+        }
+
+        .send-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(99, 102, 241, 0.3);
+        }
+
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .dashboard-container {
+                padding: 1rem;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .control-panel {
+                padding: 1rem;
+            }
+
+            .connection-controls {
+                flex-direction: column;
+            }
+
+
+            .voice-input-section {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+
+        /* Loading animation */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Accessibility improvements */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        /* Dark mode support */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --card-bg: rgba(31, 41, 55, 0.95);
+                --text-primary: #f9fafb;
+                --text-secondary: #d1d5db;
+                --glass-bg: rgba(31, 41, 55, 0.3);
+                --glass-border: rgba(255, 255, 255, 0.1);
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard-container">
+        <!-- Header -->
+        <div class="header">
+            <h1>AI Avatar Interface</h1>
+            <p>Intelligent conversation with real-time avatar responses</p>
+        </div>
+
+        <!-- Main content grid -->
+        <div class="row g-4">
+            <!-- Video Section -->
+            <div class="col-lg-7">
+                <div class="glass-card video-section">
+                    <div class="p-3">
+                        <div class="section-title">
+                            <i class="bi bi-camera-video"></i>
+                            Avatar Video Stream
+                        </div>
+                    </div>
+                    <div class="video-container">
+                        <video id="video" autoplay playsinline muted></video>
+                    </div>
+                    <div class="p-3">
+                        <!-- Connection Status -->
+                        <div class="status-indicator">
+                            <span class="status-dot" id="status-dot"></span>
+                            <span id="connection-status">Disconnected</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Control Panel -->
+            <div class="col-lg-5">
+                <div class="glass-card control-panel">
+                    <!-- Connection Controls -->
+                    <div class="control-section">
+                        <div class="section-title">
+                            <i class="bi bi-power"></i>
+                            Connection
+                        </div>
+                        <div class="connection-controls">
+                            <button id="start-btn" class="btn-modern btn-primary-modern">
+                                <i class="bi bi-play-fill me-2"></i>
+                                Start Avatar
+                            </button>
+                            <button id="stop-btn" class="btn-modern btn-danger-modern" style="display: none;">
+                                <i class="bi bi-stop-fill me-2"></i>
+                                Stop Avatar
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Chat Interface -->
+                    <div class="control-section">
+                        <div class="section-title">
+                            <i class="bi bi-chat-dots"></i>
+                            Conversation
+                        </div>
+                        <div class="chat-container">
+                            <div class="chat-messages" id="chat-messages">
+                                <div class="chat-message system-message">
+                                    <div class="message-bubble">
+                                        Welcome! Start the avatar and begin your conversation.
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Voice Input -->
+                            <div class="voice-input-section">
+                                <button class="voice-record-btn" id="voice-record-btn" title="Hold to speak">
+                                    <i class="bi bi-mic-fill"></i>
+                                </button>
+                                <div class="voice-instructions">
+                                    <strong>Voice Input:</strong> Hold the microphone button and speak (English/Chinese). Powered by Whisper ASR.
+                                </div>
+                            </div>
+
+                            <!-- Text Input -->
+                            <form id="chat-form" class="text-input-section">
+                                <input type="text" id="chat-message" class="modern-input" placeholder="Type your message here..." autocomplete="off">
+                                <button type="submit" class="send-btn" title="Send message">
+                                    <i class="bi bi-send-fill"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden elements for WebRTC compatibility -->
+    <input type="hidden" id="sessionid" value="0">
+    <input type="hidden" id="use-stun" checked>
+    <button id="start" style="display: none;"></button>
+    <button id="stop" style="display: none;"></button>
+    <audio id="audio" autoplay style="display: none;"></audio>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="client.js"></script>
+    <script>
+        // Global variables
+        let mediaRecorder;
+        let audioChunks = [];
+        let isRecording = false;
+        let recognition;
+        let isConnected = false;
+        let currentSessionId = 0;
+
+        // DOM elements
+        const startBtn = document.getElementById('start-btn');
+        const stopBtn = document.getElementById('stop-btn');
+        const statusDot = document.getElementById('status-dot');
+        const connectionStatus = document.getElementById('connection-status');
+        const chatMessages = document.getElementById('chat-messages');
+        const chatForm = document.getElementById('chat-form');
+        const chatMessage = document.getElementById('chat-message');
+        const voiceRecordBtn = document.getElementById('voice-record-btn');
+
+        // Get the best supported MIME type for MediaRecorder (FFmpeg optimized)
+        function getBestMimeType() {
+            const supportedTypes = [
+                'audio/wav',                    // Most compatible with Whisper/FFmpeg
+                'audio/mp4',                    // Very compatible, iOS Safari preferred  
+                'audio/mp4;codecs=mp4a.40.2',  // AAC in MP4 - good compatibility
+                'audio/webm',                   // WebM without codec - better than Opus
+                'audio/ogg;codecs=opus',        // Opus in OGG 
+                'audio/webm;codecs=opus'        // Last resort - problematic with FFmpeg
+            ];
+
+            for (const type of supportedTypes) {
+                if (MediaRecorder.isTypeSupported(type)) {
+                    console.log(`✅ Using FFmpeg-compatible MIME type: ${type}`);
+                    return type;
+                }
+            }
+            
+            console.log('⚠️ Using browser default MIME type (may cause FFmpeg issues)');
+            return '';
+        }
+
+        // Detect if running on iOS/Safari
+        function isIOSDevice() {
+            return /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+                   (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        }
+
+        // Convert Float32Array to base64 for PCM audio data
+        async function float32ArrayToBase64(float32Array) {
+            return new Promise((resolve, reject) => {
+                try {
+                    if (!float32Array || float32Array.length === 0) {
+                        reject(new Error('Empty or invalid audio data'));
+                        return;
+                    }
+                    
+                    const uint8Array = new Uint8Array(float32Array.buffer);
+                    let binaryString = '';
+                    const chunkSize = 8192;
+                    
+                    for (let i = 0; i < uint8Array.length; i += chunkSize) {
+                        const chunk = uint8Array.subarray(i, i + chunkSize);
+                        binaryString += String.fromCharCode.apply(null, chunk);
+                    }
+                    
+                    const base64 = btoa(binaryString);
+                    resolve(base64);
+                    
+                } catch (error) {
+                    reject(new Error(`PCM audio conversion failed: ${error.message}`));
+                }
+            });
+        }
+
+        // Add chat message to UI
+        function addChatMessage(message, type) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `chat-message ${type}-message`;
+            
+            const bubble = document.createElement('div');
+            bubble.className = 'message-bubble';
+            bubble.textContent = message;
+            
+            messageDiv.appendChild(bubble);
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Update connection status
+        function updateConnectionStatus(connected) {
+            isConnected = connected;
+            if (connected) {
+                statusDot.classList.add('connected');
+                connectionStatus.textContent = 'Connected';
+                startBtn.style.display = 'none';
+                stopBtn.style.display = 'inline-flex';
+            } else {
+                statusDot.classList.remove('connected');
+                connectionStatus.textContent = 'Disconnected';
+                startBtn.style.display = 'inline-flex';
+                stopBtn.style.display = 'none';
+            }
+        }
+
+        // Start avatar connection
+        function startAvatar() {
+            try {
+                startBtn.innerHTML = '<span class="loading"></span> Connecting...';
+                startBtn.disabled = true;
+
+                // Call the start function from client.js directly
+                start();
+                
+                // Wait a bit for the connection to establish
+                setTimeout(function() {
+                    currentSessionId = parseInt(document.getElementById('sessionid').value);
+                    if (currentSessionId > 0) {
+                        updateConnectionStatus(true);
+                        addChatMessage('Avatar connected successfully!', 'system');
+                    } else {
+                        updateConnectionStatus(false);
+                        addChatMessage('Failed to connect to avatar. Please try again.', 'system');
+                    }
+                    startBtn.innerHTML = '<i class="bi bi-play-fill me-2"></i>Start Avatar';
+                    startBtn.disabled = false;
+                }, 2000);
+                
+            } catch (error) {
+                console.error('Failed to start avatar:', error);
+                addChatMessage('Failed to connect to avatar. Please try again.', 'system');
+                updateConnectionStatus(false);
+                startBtn.innerHTML = '<i class="bi bi-play-fill me-2"></i>Start Avatar';
+                startBtn.disabled = false;
+            }
+        }
+
+        // Stop avatar connection
+        function stopAvatar() {
+            try {
+                stop(); // Call the existing stop function from client.js
+                updateConnectionStatus(false);
+                addChatMessage('Avatar disconnected.', 'system');
+            } catch (error) {
+                console.error('Failed to stop avatar:', error);
+            }
+        }
+
+        // Send chat message
+        function sendChatMessage(message) {
+            if (!message.trim() || !isConnected) return;
+
+            addChatMessage(message, 'user');
+            
+            fetch('/human', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    text: message,
+                    type: 'chat',
+                    interrupt: true,
+                    sessionid: currentSessionId
+                })
+            }).then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                addChatMessage('Message sent to avatar...', 'system');
+            }).catch(error => {
+                console.error('Error sending message:', error);
+                addChatMessage('Error sending message. Please try again.', 'system');
+            });
+        }
+
+        // Voice recording functions with Whisper processing
+        async function startVoiceRecording() {
+            if (!isConnected) {
+                addChatMessage('Please connect to avatar first.', 'system');
+                return;
+            }
+
+            try {
+                addChatMessage('Starting voice recording...', 'system');
+                
+                // iOS-specific audio constraints
+                const audioConstraints = isIOSDevice() ? {
+                    audio: {
+                        sampleRate: 48000,
+                        channelCount: 1,
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true
+                    }
+                } : {
+                    audio: {
+                        sampleRate: 44100,
+                        channelCount: 1,
+                        echoCancellation: true,
+                        noiseSuppression: true
+                    }
+                };
+                
+                const stream = await navigator.mediaDevices.getUserMedia(audioConstraints);
+                
+                // Clean up any previous recorder
+                if (mediaRecorder) {
+                    mediaRecorder = null;
+                }
+                
+                // Get the best supported MIME type
+                const mimeType = getBestMimeType();
+                console.log(`🎵 Using audio format: ${mimeType || 'browser default'}`);
+                
+                try {
+                    if (mimeType) {
+                        mediaRecorder = new MediaRecorder(stream, { mimeType: mimeType });
+                    } else {
+                        mediaRecorder = new MediaRecorder(stream);
+                    }
+                } catch (recorderError) {
+                    console.error('MediaRecorder creation failed:', recorderError);
+                    mediaRecorder = new MediaRecorder(stream);
+                    console.log('⚠️ Using fallback MediaRecorder settings');
+                }
+                
+                audioChunks = [];
+                
+                mediaRecorder.ondataavailable = event => {
+                    if (event.data.size > 0) {
+                        audioChunks.push(event.data);
+                        console.log(`Audio chunk received: ${event.data.size} bytes`);
+                    }
+                };
+                
+                mediaRecorder.onstop = async () => {
+                    console.log(`MediaRecorder stopped. Audio chunks: ${audioChunks.length}`);
+                    try {
+                        if (audioChunks.length > 0) {
+                            const totalSize = audioChunks.reduce((sum, chunk) => sum + chunk.size, 0);
+                            console.log(`Creating audio blob from ${audioChunks.length} chunks, total size: ${totalSize} bytes`);
+                            
+                            const blobMimeType = mimeType || 'audio/webm';
+                            const audioBlob = new Blob(audioChunks, { type: blobMimeType });
+                            console.log(`Audio blob created: ${audioBlob.size} bytes (${blobMimeType})`);
+                            
+                            await processVoiceInput(audioBlob);
+                        } else {
+                            console.log('No audio data recorded - no chunks received!');
+                            addChatMessage('No audio recorded. Please try again.', 'system');
+                        }
+                    } catch (error) {
+                        console.error(`Error processing recorded audio: ${error.message}`);
+                        addChatMessage('Error processing audio. Please try again.', 'system');
+                    }
+                };
+                
+                mediaRecorder.onerror = (error) => {
+                    console.error(`MediaRecorder error: ${error.error?.message || 'Unknown error'}`);
+                    isRecording = false;
+                    voiceRecordBtn.classList.remove('recording');
+                    addChatMessage('Recording error. Please try again.', 'system');
+                };
+                
+                // Start recording
+                const timeslice = isIOSDevice() ? 1000 : 100;
+                mediaRecorder.start(timeslice);
+                isRecording = true;
+                
+                voiceRecordBtn.classList.add('recording');
+                addChatMessage('Recording... (release button when done)', 'system');
+                
+            } catch (error) {
+                console.error(`Recording failed: ${error.message}`);
+                addChatMessage(`Cannot access microphone: ${error.message}`, 'system');
+                
+                isRecording = false;
+                voiceRecordBtn.classList.remove('recording');
+                
+                if (typeof stream !== 'undefined' && stream) {
+                    stream.getTracks().forEach(track => track.stop());
+                }
+            }
+        }
+
+        function stopVoiceRecording() {
+            console.log(`stopRecording called. mediaRecorder: ${!!mediaRecorder}, isRecording: ${isRecording}`);
+            if (mediaRecorder && isRecording) {
+                try {
+                    console.log(`MediaRecorder state before stop: ${mediaRecorder.state}`);
+                    mediaRecorder.stop();
+                    mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                    isRecording = false;
+                    
+                    voiceRecordBtn.classList.remove('recording');
+                    addChatMessage('Processing voice input...', 'system');
+                    
+                } catch (error) {
+                    console.error(`Error stopping recording: ${error.message}`);
+                    isRecording = false;
+                    voiceRecordBtn.classList.remove('recording');
+                    addChatMessage('Error stopping recording.', 'system');
+                }
+            }
+        }
+
+        // Process voice input with Whisper - Direct blob upload (like working system)
+        async function processVoiceInput(audioBlob) {
+            console.log(`processVoiceInput called with blob size: ${audioBlob.size} bytes, type: ${audioBlob.type}`);
+            try {
+                addChatMessage('Uploading audio to server...', 'system');
+                
+                // Create FormData to send audio blob directly to server
+                const formData = new FormData();
+                formData.append('audio', audioBlob, `recording_${Date.now()}.webm`);
+                formData.append('sessionid', currentSessionId);
+                
+                console.log(`Sending audio blob directly to server`);
+                addChatMessage('Processing with Whisper...', 'system');
+                
+                // Send to new blob processing endpoint
+                const response = await fetch('/process_voice_blob', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.code === 0) {
+                    const transcription = result.transcription;
+                    console.log(`Transcription received: ${transcription}`);
+                    addChatMessage(`Transcribed: "${transcription}"`, 'user');
+                    addChatMessage('Processing with AI...', 'system');
+                    
+                    // Automatically send transcription to LLM via /human endpoint
+                    try {
+                        const humanResponse = await fetch('/human', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                text: transcription,
+                                type: 'chat',
+                                interrupt: true,
+                                sessionid: currentSessionId
+                            })
+                        });
+                        
+                        if (humanResponse.ok) {
+                            addChatMessage('Message sent to avatar...', 'system');
+                        } else {
+                            addChatMessage('Error sending message to avatar', 'system');
+                        }
+                    } catch (humanError) {
+                        console.error('Error sending to /human:', humanError);
+                        addChatMessage('Error sending message to avatar', 'system');
+                    }
+                } else {
+                    console.error('Whisper processing failed:', result.msg);
+                    addChatMessage(`Voice processing failed: ${result.msg}`, 'system');
+                }
+                
+            } catch (error) {
+                console.error(`Voice processing error: ${error.message}`);
+                addChatMessage(`Error processing voice: ${error.message}`, 'system');
+            }
+        }
+
+        // Event listeners
+        startBtn.addEventListener('click', startAvatar);
+        stopBtn.addEventListener('click', stopAvatar);
+
+        chatForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const message = chatMessage.value.trim();
+            if (message) {
+                sendChatMessage(message);
+                chatMessage.value = '';
+            }
+        });
+
+        // Voice recording events
+        voiceRecordBtn.addEventListener('mousedown', startVoiceRecording);
+        voiceRecordBtn.addEventListener('mouseup', stopVoiceRecording);
+        voiceRecordBtn.addEventListener('mouseleave', stopVoiceRecording);
+        voiceRecordBtn.addEventListener('touchstart', startVoiceRecording);
+        voiceRecordBtn.addEventListener('touchend', stopVoiceRecording);
+
+
+        // Monitor WebRTC connection state
+        function monitorConnection() {
+            // Check if WebRTC functions are available
+            if (typeof start === 'function' && typeof stop === 'function') {
+                addChatMessage('WebRTC functions loaded successfully.', 'system');
+            } else {
+                addChatMessage('Warning: WebRTC functions not found. Check server connection.', 'system');
+            }
+        }
+
+        // Better connection monitoring
+        function checkAvatarConnection() {
+            setInterval(function() {
+                if (isConnected && currentSessionId > 0) {
+                    // Connection is active
+                } else if (isConnected && currentSessionId === 0) {
+                    // Connection lost
+                    updateConnectionStatus(false);
+                    addChatMessage('Connection to avatar lost.', 'system');
+                }
+            }, 5000); // Check every 5 seconds
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            monitorConnection();
+            checkAvatarConnection();
+            addChatMessage('Dashboard loaded. Click "Start Avatar" to begin.', 'system');
+            addChatMessage('Voice input powered by Whisper ASR - works in all browsers!', 'system');
+        });
+
+        // Handle keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            // Space bar to start/stop voice recording
+            if (e.code === 'Space' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+                e.preventDefault();
+                if (!isRecording) {
+                    startVoiceRecording();
+                }
+            }
+        });
+
+        document.addEventListener('keyup', function(e) {
+            if (e.code === 'Space' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+                e.preventDefault();
+                if (isRecording) {
+                    stopVoiceRecording();
+                }
+            }
+        });
+    </script>
+</body>
+</html>

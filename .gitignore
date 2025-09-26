@@ -1,0 +1,73 @@
+# Archivos pesados - descargar Avatar.zip
+models/
+data/
+
+# Results and outputs
+wav2lip/results/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyTorch
+*.pth
+*.pt
+*.bin
+*.safetensors
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+livetalking/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+temp*
+*.tmp
+*.cache
+
+# Recording outputs
+*.mp4
+*.aac
+*.wav
+data/record.mp4
+
+# Hugging Face cache
+.cache/
