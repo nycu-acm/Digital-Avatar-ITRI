@@ -21,23 +21,6 @@ A real-time digital avatar system supporting both **Wav2Lip** and **MuseTalk** m
 - **Custom Avatar Creation**: Generate your own avatars from videos
 - **Recording Capabilities**: Save avatar sessions as MP4 videos
 
-## 🏗️ Architecture
-
-```
-┌─────────────────┐    ┌──────────────┐    ┌─────────────────┐
-│   Web Client    │◄──►│   WebRTC     │◄──►│   Avatar App    │
-│  (Browser)      │    │  Streaming   │    │   (Python)      │
-└─────────────────┘    └──────────────┘    └─────────────────┘
-                                                    │
-                       ┌────────────────────────────┼────────────────────────┐
-                       │                            │                        │
-                ┌──────▼──────┐            ┌───────▼───────┐        ┌───────▼───────┐
-                │     TTS     │            │      ASR      │        │   Inference   │
-                │  (EdgeTTS/  │            │   (Audio      │        │  (Wav2Lip/    │
-                │   Others)   │            │  Processing)  │        │  MuseTalk)    │
-                └─────────────┘            └───────────────┘        └───────────────┘
-```
-
 ## 📋 Requirements
 
 - **OS**: Linux (Ubuntu 20.04+ recommended)
@@ -111,12 +94,12 @@ python -c "import torch; print(f'CUDA available: {torch.cuda.is_available()}')"
 
 #### Wav2Lip (Recommended)
 ```bash
-python app.py --transport webrtc --model wav2lip --avatar_id wav2lip256_avatar --REF_FILE en-US-AriaNeural --listenport 8010
+python app.py --transport webrtc --model wav2lip --avatar_id wav2lip256_avatar --REF_FILE zh-CN-XiaoxiaoNeural --listenport 8010
 ```
 
 #### MuseTalk (Advanced)
 ```bash
-python app.py --transport webrtc --model musetalk --avatar_id musetalk_avatar --REF_FILE en-US-AriaNeural --listenport 8010
+python app.py --transport webrtc --model musetalk --avatar_id musetalk_avatar --REF_FILE zh-CN-XiaoxiaoNeural --listenport 8010
 ```
 
 ### Accessing the Interface
@@ -133,9 +116,8 @@ Open your browser and navigate to:
 - `--tts`: TTS engine (default: `edgetts`)
 
 ### Available TTS Voices
-- **English**: `en-US-AriaNeural` (Female, neutral)
+- **English**: `en-GB-SoniaNeural` (Female, neutral)
 - **Chinese**: `zh-CN-XiaoxiaoNeural` (Female, Chinese)
-- **Neutral**: `en-US-JennyNeural` (Female, friendly)
 
 ## 🛠️ Creating Custom Avatars
 
@@ -190,18 +172,6 @@ The system uses EdgeTTS by default with the following voice options:
 --REF_FILE en-US-JennyNeural
 ```
 
-### Custom Video Integration
-Create `custom_config.json` for custom video sequences:
-```json
-[
-    {
-        "audiotype": 1,
-        "imgpath": "./custom_videos/video1/",
-        "audiopath": "./custom_videos/audio1.wav"
-    }
-]
-```
-
 ## 🔧 Troubleshooting
 
 ### Common Issues
@@ -212,44 +182,19 @@ Create `custom_config.json` for custom video sequences:
 python app.py --batch_size 8 --model musetalk
 ```
 
-**WebRTC Connection Issues**
-- Check firewall settings
-- Ensure port 8010 is open
-- Try different STUN servers in `app.py`
-
-**Audio Issues**
-```bash
-# Install audio dependencies
-sudo apt install portaudio19-dev python3-pyaudio
-pip install pyaudio
-```
-
 **Model Loading Errors**
 - Verify `Avatar.zip` was extracted correctly
 - Check file permissions: `chmod -R 755 models/ data/`
 - Ensure sufficient disk space (>10GB)
 
-### Performance Optimization
+## System Requirements by Model
 
-**For better performance:**
-1. Use NVIDIA GPU with >8GB VRAM
-2. Increase `--batch_size` (16-32)
-3. Use SSD storage for models
-4. Close unnecessary applications
+| Model     | VRAM    | Processing | Quality | Speed |
+|-----------|---------|------------|---------|-------|
+| Wav2Lip   | 4GB     | Light      | Good    | Fast  |
+| MuseTalk  | 8GB+    | Heavy      | Excellent| Medium|
 
-**For lower-end hardware:**
-1. Reduce `--batch_size` to 4-8
-2. Use Wav2Lip instead of MuseTalk
-3. Lower video resolution in WebRTC settings
-
-## 📊 System Requirements by Model
-
-| Model     | VRAM    | Processing | Quality | Speed | Recommended |
-|-----------|---------|------------|---------|-------|-------------|
-| Wav2Lip   | 4GB     | Light      | Good    | Fast  | ✅ Yes      |
-| MuseTalk  | 8GB+    | Heavy      | Excellent| Medium| Advanced    |
-
-## 📚 Technical Details
+## Technical Details
 
 ### Processing Pipeline
 1. **Text Input** → TTS Engine → Audio Stream (16kHz, 20ms chunks)
@@ -264,31 +209,3 @@ pip install pyaudio
 - **Frame Rate**: 25 FPS video, 50 FPS audio processing
 - **Latency**: <200ms total pipeline latency
 
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature-name`
-3. Commit changes: `git commit -m 'Add feature'`
-4. Push to branch: `git push origin feature-name`
-5. Create Pull Request
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🔗 Acknowledgments
-
-- **Wav2Lip**: [Original Paper](https://arxiv.org/abs/2008.10010)
-- **MuseTalk**: [Original Repository](https://github.com/TMElyralab/MuseTalk)
-- **WebRTC**: aiortc library for Python WebRTC implementation
-
-## 💬 Support
-
-For issues and questions:
-1. Check the [Troubleshooting](#-troubleshooting) section
-2. Search existing [Issues](https://github.com/your-username/Avatar-ITRI/issues)
-3. Create a new issue with detailed information
-
----
-
-**Made with ❤️ by ITRI Team**
