@@ -4,12 +4,12 @@ A real-time digital avatar system supporting both **Wav2Lip** and **MuseTalk** m
 
 ![Architecture](./assets/architecture.png)
 
-## 🎬 Demo Videos
+## Demo Videos
 
 - **[Computer Demo](https://drive.google.com/file/d/1WrXx5Y-3J9XJqXYNcAm7M0gXu_baWb_j/view?usp=sharing)** - Desktop browser experience
 - **[Mobile Demo](https://drive.google.com/file/d/192REA6hSZonl06c3n_UwN0B8jWGQWO3u/view?usp=sharing)** - Mobile device experience
 
-## 🌟 Features
+## Features
 
 - **Real-time Avatar Generation**: Live lip-sync video generation at 25 FPS
 - **Dual Model Support**: 
@@ -21,7 +21,7 @@ A real-time digital avatar system supporting both **Wav2Lip** and **MuseTalk** m
 - **Custom Avatar Creation**: Generate your own avatars from videos
 - **Recording Capabilities**: Save avatar sessions as MP4 videos
 
-## 📋 Requirements
+## Requirements
 
 - **OS**: Linux (Ubuntu 20.04+ recommended)
 - **GPU**: NVIDIA GPU with CUDA support (>= 8GB VRAM recommended)
@@ -29,7 +29,7 @@ A real-time digital avatar system supporting both **Wav2Lip** and **MuseTalk** m
 - **CUDA**: 12.4 (or compatible)
 - **FFmpeg**: System package required
 
-## 🚀 Installation
+## Installation
 
 ### 1. Clone Repository
 ```bash
@@ -77,7 +77,20 @@ conda install pytorch==2.5.0 torchvision==0.20.0 torchaudio==2.5.0 pytorch-cuda=
 pip install -r requirements.txt
 ```
 
-### 4. System Dependencies
+### 4. Additional Dependencies for MuseTalk
+If you plan to use the MuseTalk model, install these additional dependencies:
+
+```bash
+# Install MMDetection dependencies
+conda install ffmpeg
+pip install --no-cache-dir -U openmim 
+mim install mmengine 
+mim install "mmcv>=2.0.1" 
+mim install "mmdet>=3.1.0" 
+mim install "mmpose>=1.1.0"
+```
+
+### 5. System Dependencies
 ```bash
 # Ubuntu/Debian
 sudo apt update
@@ -88,7 +101,7 @@ nvidia-smi
 python -c "import torch; print(f'CUDA available: {torch.cuda.is_available()}')"
 ```
 
-## 🎭 Usage
+## Usage
 
 ### Running with Different Models
 
@@ -119,17 +132,22 @@ Open your browser and navigate to:
 - **English**: `en-GB-SoniaNeural` (Female, neutral)
 - **Chinese**: `zh-CN-XiaoxiaoNeural` (Female, Chinese)
 
-## 🛠️ Creating Custom Avatars
+## Creating Custom Avatars
 
 ### For Wav2Lip
 ```bash
 cd wav2lip
 python genavatar.py --video_path /path/to/your/video.mp4 --img_size 256 --avatar_id your_avatar_name
+
+# After running, copy the generated files to the data folder:
+cp -r results/avatars/your_avatar_name ../data/avatars/
 ```
 
 ### For MuseTalk
 ```bash
 python genavatar_musetalk.py --file /path/to/your/video.mp4 --avatar_id your_musetalk_avatar
+
+# The files are automatically generated in the data/avatars/ folder
 ```
 
 **Requirements for source videos:**
@@ -139,7 +157,10 @@ python genavatar_musetalk.py --file /path/to/your/video.mp4 --avatar_id your_mus
 - **Lighting**: Good, consistent lighting
 - **Background**: Static or minimal movement
 
-## 🎮 API Endpoints
+**After avatar generation:**
+For Wav2Lip avatars, make sure to copy the generated files from `results/avatars/` to the `data/avatars/` folder of the project.
+
+## API Endpoints
 
 ### WebRTC Connection
 - `POST /offer` - Establish WebRTC connection
