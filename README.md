@@ -38,7 +38,8 @@ cd Avatar-ITRI
 ```
 
 ### 2. Download Models and Data
-Download the `Avatar.zip` file containing the required models and avatar data. Extract it in the project root directory:
+Download the `Avatar.zip` file containing the required models and avatar data: https://drive.google.com/file/d/1bCIsmzhIvMsOgcwb3v5vKe9io5e8KHui/view?usp=sharing
+Extract it in the project root directory:
 
 ```bash
 # Extract Avatar.zip to get these folders:
