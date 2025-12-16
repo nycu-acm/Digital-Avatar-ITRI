@@ -22,7 +22,7 @@ from av import AudioFrame, VideoFrame
 import av
 from fractions import Fraction
 
-from ttsreal import EdgeTTS,SovitsTTS,XTTS,CosyVoiceTTS,FishTTS,TencentTTS,DoubaoTTS
+from ttsreal import EdgeTTS,SovitsTTS,XTTS,CosyVoiceTTS,FishTTS,TencentTTS,DoubaoTTS,OpenAudioTTS
 from logger import logger
 
 from tqdm import tqdm
@@ -68,6 +68,8 @@ class BaseReal:
             self.tts = CosyVoiceTTS(opt,self)
         elif opt.tts == "fishtts":
             self.tts = FishTTS(opt,self)
+        elif opt.tts == "openaudio":
+            self.tts = OpenAudioTTS(opt,self)
         elif opt.tts == "tencent":
             self.tts = TencentTTS(opt,self)
         elif opt.tts == "doubao":

@@ -414,6 +414,31 @@
             to { transform: rotate(360deg); }
         }
 
+        /* User video preview for visual perception */
+        .user-video-container {
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            background: var(--dark-bg);
+            border: 2px solid var(--accent-purple);
+        }
+        .user-video-title {
+            background: var(--accent-purple);
+            color: white;
+            padding: 8px 12px;
+            font-weight: 600;
+            font-size: 0.8rem;
+        }
+        .user-video {
+            width: 100%;
+            height: auto;
+            display: block;
+            max-height: 200px;
+            object-fit: cover;
+        }
+        .vision-controls {
+            text-align: center;
+        }
+
         /* Accessibility improvements */
         .sr-only {
             position: absolute;
@@ -460,7 +485,7 @@
                         </div>
                     </div>
                     <div class="video-container">
-                        <video id="video" autoplay playsinline muted></video>
+                        <video id="video" autoplay playsinline></video>
                     </div>
                     <div class="p-3">
                         <!-- Connection Status -->
@@ -490,6 +515,63 @@
                                 <i class="bi bi-stop-fill me-2"></i>
                                 Stop Avatar
                             </button>
+                        </div>
+                    </div>
+
+                    <!-- Visual Perception Controls -->
+                    <div class="control-section">
+                        <div class="section-title">
+                            <i class="bi bi-eye"></i>
+                            Visual Perception
+                        </div>
+                        <div class="vision-controls">
+                            <div class="status-indicator mb-2">
+                                <span class="status-dot" id="vision-status-dot"></span>
+                                <span id="vision-status">Disabled</span>
+                            </div>
+                            <button id="toggle-vision-btn" class="btn-modern btn-secondary-modern">
+                                <i class="bi bi-camera me-2"></i>
+                                Enable Vision
+                            </button>
+                            <div class="mt-2">
+                                <small class="text-muted">
+                                    Allows avatar to see and understand your appearance and environment
+                                </small>
+                            </div>
+                        </div>
+                        <div id="user-video-container" class="user-video-container mt-3" style="display: none;">
+                            <div class="user-video-title">
+                                <small>Your Webcam Preview</small>
+                            </div>
+                            <video id="user-video" autoplay playsinline muted class="user-video"></video>
+                        </div>
+                    </div>
+
+                    <!-- Manual Visual Description (Developer Mode) -->
+                    <div class="control-section">
+                        <div class="section-title">
+                            <i class="bi bi-pencil-square"></i>
+                            Manual Visual Description
+                        </div>
+                        <div class="vision-controls">
+                            <div class="mb-2">
+                                <label for="manual-visual-description" class="form-label" style="font-size: 0.9rem; color: var(--text-secondary);">
+                                    <small>Enter visual description manually (used when Vision is disabled)</small>
+                                </label>
+                                <textarea 
+                                    id="manual-visual-description" 
+                                    class="modern-input" 
+                                    rows="3" 
+                                    placeholder="e.g., a young boy wearing glasses, and is smiling"
+                                    style="width: 100%; resize: vertical; min-height: 80px;"
+                                ></textarea>
+                            </div>
+                            <div class="mt-2">
+                                <small class="text-muted">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    This description will be used as user_description when Vision is disabled, allowing you to test tone conversion without enabling camera.
+                                </small>
+                            </div>
                         </div>
                     </div>
 
@@ -544,6 +626,62 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="client.js"></script>
     <script>
+        // Override client.js track handler to ensure video/audio elements are properly set and played
+        (function() {
+            // Store original start function
+            const originalStart = window.start;
+            
+            // Override start function
+            window.start = function() {
+                // Call original start to set up WebRTC connection
+                if (typeof originalStart === 'function') {
+                    originalStart();
+                }
+                
+                // Wait for peer connection to be created, then add enhanced track handler
+                setTimeout(() => {
+                    if (window.pc) {
+                        // Remove any existing track listeners
+                        const newPc = window.pc;
+                        
+                        // Add enhanced track handler
+                        newPc.addEventListener('track', (evt) => {
+                            console.log('📹 WebRTC track received:', evt.track.kind, 'streams:', evt.streams.length);
+                            
+                            if (evt.track.kind === 'video') {
+                                const videoEl = document.getElementById('video');
+                                if (videoEl && evt.streams && evt.streams.length > 0) {
+                                    videoEl.srcObject = evt.streams[0];
+                                    videoEl.muted = false; // Ensure video can play audio if needed
+                                    videoEl.play().then(() => {
+                                        console.log('✅ Video element playing');
+                                    }).catch(e => {
+                                        console.error('❌ Video play error:', e);
+                                    });
+                                }
+                            } else if (evt.track.kind === 'audio') {
+                                const audioEl = document.getElementById('audio');
+                                if (audioEl && evt.streams && evt.streams.length > 0) {
+                                    audioEl.srcObject = evt.streams[0];
+                                    audioEl.play().then(() => {
+                                        console.log('✅ Audio element playing');
+                                    }).catch(e => {
+                                        console.error('❌ Audio play error:', e);
+                                        // Try unmuting if autoplay was blocked
+                                        audioEl.muted = false;
+                                        audioEl.play().catch(e2 => console.error('❌ Audio play retry error:', e2));
+                                    });
+                                }
+                            }
+                        });
+                        
+                        console.log('✅ Enhanced track handler attached');
+                    }
+                }, 100);
+            };
+        })();
+    </script>
+    <script>
         // Global variables
         let mediaRecorder;
         let audioChunks = [];
@@ -551,6 +689,17 @@
         let recognition;
         let isConnected = false;
         let currentSessionId = 0;
+
+        // Visual Perception variables
+        let isVisionEnabled = false;
+        let userVideoStream = null;
+        let visionCanvas = null;
+        let visionInterval = null;
+        const VISION_API_URL = 'http://localhost:5004';
+        const VISION_ANALYSIS_INTERVAL = 5000; // 5 seconds
+        
+        // Manual visual description element
+        const manualVisualDescription = document.getElementById('manual-visual-description');
 
         // DOM elements
         const startBtn = document.getElementById('start-btn');
@@ -561,6 +710,13 @@
         const chatForm = document.getElementById('chat-form');
         const chatMessage = document.getElementById('chat-message');
         const voiceRecordBtn = document.getElementById('voice-record-btn');
+        
+        // Vision elements
+        const toggleVisionBtn = document.getElementById('toggle-vision-btn');
+        const visionStatusDot = document.getElementById('vision-status-dot');
+        const visionStatus = document.getElementById('vision-status');
+        const userVideo = document.getElementById('user-video');
+        const userVideoContainer = document.getElementById('user-video-container');
 
         // Get the best supported MIME type for MediaRecorder (FFmpeg optimized)
         function getBestMimeType() {
@@ -631,6 +787,90 @@
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
 
+        // Fetch the latest avatar reply text from RAG history and show it in chat
+        const RAG_API_BASE = 'http://localhost:5002';
+        let lastHistoryCount = 0;
+        let replyPollTimer = null;
+        let replyPollAttempts = 0;
+        const MAX_REPLY_POLL_ATTEMPTS = 10;
+
+        async function fetchAndShowAvatarReply() {
+            if (!isConnected || currentSessionId <= 0) return false; // Return false if no new message found
+            try {
+                const ragSessionId = `talkinghead_session_${currentSessionId}`;
+                const response = await fetch(`${RAG_API_BASE}/api/rag-llm/sessions/${encodeURIComponent(ragSessionId)}/history`);
+                if (!response.ok) {
+                    console.log(`[Poll] History API returned ${response.status}, skipping`);
+                    return false;
+                }
+                const data = await response.json();
+                const history = data.history || [];
+
+                // Only process new messages since last check to avoid duplicates
+                if (history.length > lastHistoryCount) {
+                    const newItems = history.slice(lastHistoryCount);
+                    let foundNewMessage = false;
+                    for (const item of newItems) {
+                        if (item.role === 'assistant' && item.content && item.content.trim().length > 0) {
+                            console.log(`[Poll] ✅ Found new assistant message (length: ${item.content.length} chars)`);
+                            addChatMessage(item.content.trim(), 'ai');
+                            foundNewMessage = true;
+                        }
+                    }
+                    lastHistoryCount = history.length;
+                    console.log(`[Poll] Updated lastHistoryCount to ${lastHistoryCount}, foundNewMessage=${foundNewMessage}`);
+                    return foundNewMessage; // Return true if new message was found
+                }
+                // No new messages
+                console.log(`[Poll] No new messages (history.length=${history.length}, lastHistoryCount=${lastHistoryCount})`);
+                return false;
+            } catch (e) {
+                console.error('[Poll] Failed to fetch avatar reply from RAG history:', e);
+                return false;
+            }
+        }
+
+        function startReplyPolling() {
+            if (!isConnected || currentSessionId <= 0) {
+                console.log('[Poll] Cannot start polling: not connected or invalid session');
+                return;
+            }
+            
+            // clear any existing poller
+            if (replyPollTimer) {
+                console.log('[Poll] Clearing existing poller before starting new one');
+                clearInterval(replyPollTimer);
+                replyPollTimer = null;
+            }
+            
+            replyPollAttempts = 0;
+            console.log(`[Poll] Starting reply polling for session ${currentSessionId}, lastHistoryCount=${lastHistoryCount}`);
+            
+            replyPollTimer = setInterval(async () => {
+                replyPollAttempts += 1;
+                console.log(`[Poll] Attempt #${replyPollAttempts}/${MAX_REPLY_POLL_ATTEMPTS}`);
+                
+                const foundNewMessage = await fetchAndShowAvatarReply();
+                
+                // Stop polling if we found a new message or reached max attempts
+                if (foundNewMessage) {
+                    console.log(`[Poll] ✅ Found new avatar reply, stopping polling after ${replyPollAttempts} attempts`);
+                    if (replyPollTimer) {
+                        clearInterval(replyPollTimer);
+                        replyPollTimer = null;
+                        console.log('[Poll] Polling stopped successfully');
+                    }
+                } else if (replyPollAttempts >= MAX_REPLY_POLL_ATTEMPTS) {
+                    console.log(`[Poll] ⏱️ Reached max polling attempts (${MAX_REPLY_POLL_ATTEMPTS}), stopping`);
+                    if (replyPollTimer) {
+                        clearInterval(replyPollTimer);
+                        replyPollTimer = null;
+                        console.log('[Poll] Polling stopped due to max attempts');
+                    }
+                }
+            }, 2000);
+        }
+
         // Update connection status
         function updateConnectionStatus(connected) {
             isConnected = connected;
@@ -652,13 +892,15 @@
             try {
                 startBtn.innerHTML = '<span class="loading"></span> Connecting...';
                 startBtn.disabled = true;
-
+            
                 // Call the start function from client.js directly
                 start();
                 
                 // Wait a bit for the connection to establish
                 setTimeout(function() {
                     currentSessionId = parseInt(document.getElementById('sessionid').value);
+                    // Reset history counter when a new session starts
+                    lastHistoryCount = 0;
                     if (currentSessionId > 0) {
                         updateConnectionStatus(true);
                         addChatMessage('Avatar connected successfully!', 'system');
@@ -680,8 +922,20 @@
         }
 
         // Stop avatar connection
-        function stopAvatar() {
+        async function stopAvatar() {
             try {
+                // Clean up vision session if active
+                if (isVisionEnabled && currentSessionId > 0) {
+                    try {
+                        await fetch(`${VISION_API_URL}/cleanup-session/${currentSessionId}`, {
+                            method: 'POST'
+                        });
+                    } catch (error) {
+                        console.error('Error cleaning up vision session:', error);
+                    }
+                    stopVision();
+                }
+                
                 stop(); // Call the existing stop function from client.js
                 updateConnectionStatus(false);
                 addChatMessage('Avatar disconnected.', 'system');
@@ -690,32 +944,15 @@
             }
         }
 
-        // Send chat message
-        function sendChatMessage(message) {
-            if (!message.trim() || !isConnected) return;
-
-            addChatMessage(message, 'user');
-            
-            fetch('/human', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    text: message,
-                    type: 'chat',
-                    interrupt: true,
-                    sessionid: currentSessionId
-                })
-            }).then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                addChatMessage('Message sent to avatar...', 'system');
-            }).catch(error => {
-                console.error('Error sending message:', error);
-                addChatMessage('Error sending message. Please try again.', 'system');
-            });
+        // Send chat message (enhanced with visual context)
+        async function sendChatMessage(message) {
+            await sendChatMessageWithVision(message);
+            // Reset history counter before starting new polling (to detect new response)
+            // Note: We don't reset lastHistoryCount to 0, but keep it at current value
+            // so we only detect NEW messages added after this point
+            console.log(`[Poll] Starting polling after sending message, current lastHistoryCount=${lastHistoryCount}`);
+            // Start polling RAG history for the avatar's reply text
+            startReplyPolling();
         }
 
         // Voice recording functions with Whisper processing
@@ -877,23 +1114,47 @@
                     addChatMessage(`Transcribed: "${transcription}"`, 'user');
                     addChatMessage('Processing with AI...', 'system');
                     
-                    // Automatically send transcription to LLM via /human endpoint
+                    // Automatically send transcription to LLM via /human endpoint with visual context
                     try {
+                        // Get visual context: priority 1) Vision API, 2) Manual description
+                        let userDescription = null;
+                        
+                        if (isVisionEnabled) {
+                            const visualContext = await getVisualContext();
+                            if (visualContext) {
+                                userDescription = visualContext;
+                            }
+                        }
+                        
+                        // If vision is disabled or Vision API returned no context, use manual description
+                        if (!userDescription && manualVisualDescription && manualVisualDescription.value.trim()) {
+                            userDescription = manualVisualDescription.value.trim();
+                        }
+                        
+                        const requestBody = {
+                            text: transcription,
+                            type: 'chat',
+                            interrupt: true,
+                            sessionid: currentSessionId
+                        };
+                        
+                        // Add user_description if available (for tone conversion)
+                        if (userDescription) {
+                            requestBody.user_description = userDescription;
+                        }
+                        
                         const humanResponse = await fetch('/human', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json'
                             },
-                            body: JSON.stringify({
-                                text: transcription,
-                                type: 'chat',
-                                interrupt: true,
-                                sessionid: currentSessionId
-                            })
+                            body: JSON.stringify(requestBody)
                         });
                         
                         if (humanResponse.ok) {
                             addChatMessage('Message sent to avatar...', 'system');
+                            // Start polling RAG history for the avatar's reply text
+                            startReplyPolling();
                         } else {
                             addChatMessage('Error sending message to avatar', 'system');
                         }
@@ -932,6 +1193,293 @@
         voiceRecordBtn.addEventListener('touchstart', startVoiceRecording);
         voiceRecordBtn.addEventListener('touchend', stopVoiceRecording);
 
+        // Visual Perception events
+        toggleVisionBtn.addEventListener('click', async () => {
+            if (isVisionEnabled) {
+                stopVision();
+            } else {
+                await initializeVision();
+            }
+        });
+
+
+        // ===== VISUAL PERCEPTION FUNCTIONS =====
+        
+        // Initialize visual perception system
+        async function initializeVision() {
+            try {
+                console.log('Initializing Visual Perception...');
+                
+                // Check if getUserMedia is available
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    throw new Error('Camera access not available. This feature requires HTTPS when accessing from external IP addresses.');
+                }
+                
+                // Check if we're on HTTPS or localhost
+                const isSecureContext = window.isSecureContext || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+                if (!isSecureContext) {
+                    throw new Error('Camera access requires HTTPS. Please use https:// instead of http:// when accessing from external IP addresses.');
+                }
+                
+                // Request webcam access with video
+                const constraints = {
+                    video: {
+                        width: { ideal: 640 },
+                        height: { ideal: 480 },
+                        facingMode: 'user'
+                    },
+                    audio: false  // Only video for vision
+                };
+                
+                userVideoStream = await navigator.mediaDevices.getUserMedia(constraints);
+                userVideo.srcObject = userVideoStream;
+                
+                // Create canvas for frame capture
+                visionCanvas = document.createElement('canvas');
+                visionCanvas.width = 640;
+                visionCanvas.height = 480;
+                
+                // Show user video preview
+                userVideoContainer.style.display = 'block';
+                
+                // Start visual analysis
+                startVisualAnalysis();
+                
+                updateVisionStatus(true, 'Active');
+                console.log('Visual Perception initialized successfully');
+                
+                // After enabling vision, immediately ask LLM to greet using its vision ability (no vision server polling)
+                if (currentSessionId > 0 && isConnected) {
+                    await new Promise(resolve => setTimeout(resolve, 10000));
+                    await sendVisionGreetingViaLLM();
+                }
+                
+                return true;
+                
+            } catch (error) {
+                console.error('Failed to initialize visual perception:', error);
+                
+                // Show user-friendly error message
+                let errorMessage = 'Failed';
+                if (error.message.includes('HTTPS') || error.message.includes('Camera access')) {
+                    errorMessage = 'Requires HTTPS';
+                    // Show detailed error in console
+                    console.warn('Visual Perception Error: ' + error.message);
+                    console.warn('Solution: Access via https:// or use localhost for testing');
+                }
+                
+                updateVisionStatus(false, errorMessage);
+                return false;
+            }
+        }
+        
+        // Send greeting message via LLM that leverages its own vision capability
+        async function sendVisionGreetingViaLLM() {
+            try {
+                // System prompt for ITRI guide persona with visual awareness
+                const greetingMessage = [
+                    'System: Vision has been enabled for this session.',
+                    'Act as the official guide for the Industrial Technology Research Institute (ITRI) museum and welcome the visitor.',
+                    'Use your visual perception to provide one short, friendly description of the visitor (appearance, outfit, energy) without sensitive attributes.',
+                    'Briefly connect the observation to ITRI or the current exhibit theme, then invite the visitor to begin the tour with an open-ended question.'
+                ].join(' ');
+
+                const response = await fetch('/human', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        text: greetingMessage,
+                        type: 'chat',
+                        interrupt: false,
+                        sessionid: currentSessionId
+                    })
+                });
+
+                if (response.ok) {
+                    addChatMessage('Sent greeting request to LLM...', 'system');
+                } else {
+                    addChatMessage('Failed to send greeting request to LLM', 'system');
+                }
+            } catch (e) {
+                console.error('sendVisionGreetingViaLLM error:', e);
+                addChatMessage('Error sending greeting request to LLM', 'system');
+            }
+        }
+        
+        // Stop visual perception
+        function stopVision() {
+            console.log('Stopping Visual Perception...');
+            
+            // Stop analysis interval
+            if (visionInterval) {
+                clearInterval(visionInterval);
+                visionInterval = null;
+            }
+            
+            // Stop video stream
+            if (userVideoStream) {
+                userVideoStream.getTracks().forEach(track => track.stop());
+                userVideoStream = null;
+            }
+            
+            // Hide user video preview
+            userVideoContainer.style.display = 'none';
+            
+            updateVisionStatus(false, 'Disabled');
+            console.log('Visual Perception stopped');
+        }
+        
+        // Start continuous visual analysis
+        function startVisualAnalysis() {
+            if (visionInterval) {
+                clearInterval(visionInterval);
+            }
+            
+            visionInterval = setInterval(async () => {
+                if (isVisionEnabled && currentSessionId > 0) {
+                    await captureAndAnalyzeFrame();
+                }
+            }, VISION_ANALYSIS_INTERVAL);
+            
+            console.log(`Visual analysis started (every ${VISION_ANALYSIS_INTERVAL/1000}s)`);
+        }
+        
+        // Capture frame and send for analysis
+        async function captureAndAnalyzeFrame() {
+            if (!userVideo.videoWidth || !userVideo.videoHeight) {
+                return;
+            }
+            
+            try {
+                // Capture frame to canvas
+                const ctx = visionCanvas.getContext('2d');
+                ctx.drawImage(userVideo, 0, 0, visionCanvas.width, visionCanvas.height);
+                
+                // Convert to base64
+                const imageData = visionCanvas.toDataURL('image/jpeg', 0.8);
+                
+                // Send to Vision API with session ID
+                const response = await fetch(`${VISION_API_URL}/analyze-vision`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        image: imageData,
+                        sessionid: currentSessionId
+                    })
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    console.log(`Visual analysis queued for session ${currentSessionId}:`, result.image_id);
+                } else {
+                    console.error('Vision analysis request failed:', response.status);
+                }
+                
+            } catch (error) {
+                console.error('Error capturing frame:', error);
+            }
+        }
+        
+        // Get latest visual context for this session
+        async function getVisualContext() {
+            if (!isVisionEnabled || currentSessionId === 0) {
+                return null;
+            }
+            
+            try {
+                const response = await fetch(`${VISION_API_URL}/get-visual-context/${currentSessionId}`);
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.success && result.visual_context) {
+                        return result.visual_context;
+                    }
+                }
+                return null;
+            } catch (error) {
+                console.error('Error getting visual context:', error);
+                return null;
+            }
+        }
+        
+        // Update vision status UI
+        function updateVisionStatus(enabled, statusText) {
+            isVisionEnabled = enabled;
+            visionStatus.textContent = statusText;
+            
+            if (enabled) {
+                visionStatusDot.classList.add('connected');
+                toggleVisionBtn.innerHTML = '<i class="bi bi-camera-video-off me-2"></i>Disable Vision';
+                toggleVisionBtn.classList.remove('btn-secondary-modern');
+                toggleVisionBtn.classList.add('btn-danger-modern');
+            } else {
+                visionStatusDot.classList.remove('connected');
+                toggleVisionBtn.innerHTML = '<i class="bi bi-camera me-2"></i>Enable Vision';
+                toggleVisionBtn.classList.remove('btn-danger-modern');
+                toggleVisionBtn.classList.add('btn-secondary-modern');
+            }
+        }
+        
+        // Enhanced sendChatMessage with visual context
+        async function sendChatMessageWithVision(message) {
+            if (!message.trim() || !isConnected) return;
+            
+            // Get visual context: priority 1) Vision API, 2) Manual description
+            let userDescription = null;
+            let enhancedMessage = message;
+            
+            if (isVisionEnabled) {
+                // Try to get visual context from Vision API
+                const visualContext = await getVisualContext();
+                if (visualContext) {
+                    userDescription = visualContext;
+                    enhancedMessage = `Visual Context: ${visualContext}\n\nUser: ${message}`;
+                    console.log('Enhanced message with visual context from Vision API');
+                }
+            }
+            
+            // If vision is disabled or Vision API returned no context, use manual description
+            if (!userDescription && manualVisualDescription && manualVisualDescription.value.trim()) {
+                userDescription = manualVisualDescription.value.trim();
+                console.log('Using manual visual description:', userDescription);
+            }
+            
+            // Add original user message to chat
+            addChatMessage(message, 'user');
+            
+            // Send message to avatar with optional user_description
+            try {
+                const requestBody = {
+                    text: enhancedMessage,
+                    type: 'chat',
+                    interrupt: false,
+                    sessionid: currentSessionId
+                };
+                
+                // Add user_description if available (for tone conversion)
+                if (userDescription) {
+                    requestBody.user_description = userDescription;
+                }
+                
+                const response = await fetch('/human', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+                
+                if (!response.ok) {
+                    addChatMessage('Error sending message to avatar', 'system');
+                }
+            } catch (error) {
+                console.error('Error sending message:', error);
+                addChatMessage('Error sending message to avatar', 'system');
+            }
+        }
 
         // Monitor WebRTC connection state
         function monitorConnection() {

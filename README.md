@@ -1,8 +1,16 @@
-# Avatar ITRI - Real-time Digital Avatar System
+# Avatar-V2: Real-time Digital Avatar System
 
-A real-time digital avatar system supporting both **Wav2Lip** and **MuseTalk** models for lip-sync video generation with live audio processing and WebRTC streaming.
+Advanced real-time digital avatar system supporting both **Wav2Lip** and **MuseTalk** models for lip-sync video generation with live audio processing, **OpenAudio S1 emotional TTS**, **FastVLM visual perception**, and **WebRTC streaming**.
 
 ![Architecture](./assets/architecture.png)
+
+## 🌟 New Features in V2
+
+- **🎭 OpenAudio S1 Emotional TTS**: Fish Audio's 4B parameter model with emotional tag control
+- **👁️ FastVLM Visual Perception**: Real-time visual context analysis for personalized interactions
+- **🔗 LLM Integration API**: Clean HTTP interface for external LLM systems to access visual context
+- **🎯 Enhanced Performance**: Sub-200ms latency with 5-thread parallel processing
+- **🌐 Multi-session Support**: Concurrent user support with isolated processing pipelines
 
 ## Demo Videos
 
@@ -11,20 +19,30 @@ A real-time digital avatar system supporting both **Wav2Lip** and **MuseTalk** m
 
 ## Features
 
+### Core Avatar Generation
 - **Real-time Avatar Generation**: Live lip-sync video generation at 25 FPS
 - **Dual Model Support**: 
-  - **Wav2Lip**: High-quality 256x256 lip synchronization
-  - **MuseTalk**: Advanced diffusion-based avatar with better facial expressions
-- **Text-to-Speech**: EdgeTTS with multiple voice options
+  - **Wav2Lip**: High-speed 256x256 lip synchronization for efficiency
+  - **MuseTalk**: Advanced diffusion-based avatar with superior facial expressions
 - **WebRTC Streaming**: Low-latency browser-based video streaming
-- **Multi-session Support**: Concurrent client connections
-- **Custom Avatar Creation**: Generate your own avatars from videos
+- **Multi-session Architecture**: Concurrent client connections with isolated processing
+
+### Advanced AI Integration
+- **OpenAudio S1 TTS**: Emotional text-to-speech with tags like (excited), (calm), (confused), (regretful)
+- **FastVLM Visual Perception**: Real-time analysis of user demographics, expressions, and environment
+- **EdgeTTS Fallback**: Reliable backup TTS system for enhanced stability
+- **Custom Avatar Creation**: Generate personalized avatars from user videos
+
+### Technical Capabilities
+- **5-Thread Pipeline**: Parallel processing for WebRTC, TTS, feature extraction, neural inference, and video rendering
+- **Sub-200ms Latency**: Real-time conversational interaction
+- **Cross-platform Compatibility**: Works on Chrome, Firefox, Safari without plugins
 - **Recording Capabilities**: Save avatar sessions as MP4 videos
 
 ## Requirements
 
 - **OS**: Linux (Ubuntu 20.04+ recommended)
-- **GPU**: NVIDIA GPU with CUDA support (>= 8GB VRAM recommended)
+- **GPU**: NVIDIA GPU with CUDA support (>= 8GB VRAM recommended for MuseTalk, 4GB for Wav2Lip)
 - **Python**: 3.8-3.10
 - **CUDA**: 12.4 (or compatible)
 - **FFmpeg**: System package required
@@ -33,24 +51,26 @@ A real-time digital avatar system supporting both **Wav2Lip** and **MuseTalk** m
 
 ### 1. Clone Repository
 ```bash
-git clone https://github.com/your-username/Avatar-ITRI.git
-cd Avatar-ITRI
+git clone https://github.com/HelloHe110/ITRI_chatbot.git
+cd ITRI_chatbot/Avatar-V2
 ```
 
-### 2. Download Models and Data
-Download the `Avatar.zip` file containing the required models and avatar data. Extract it in the project root directory:
+### 2. Download Required Files
+Download the Avatar-V2.zip file containing the required models, data, and FastVLM components:
 
 ```bash
-# Extract Avatar.zip to get these folders:
-unzip Avatar.zip
-# This should create:
-# ./models/     - Pre-trained models (wav2lip.pth, MuseTalk models, etc.)
-# ./data/       - Avatar data (wav2lip256_avatar, musetalk_avatar)
+# Download Avatar-V2.zip from [LINK TO BE PROVIDED]
+# Extract the file to get these folders:
+unzip Avatar-V2.zip
+# This will create:
+# ./models/         - Pre-trained models (wav2lip.pth, MuseTalk models, Whisper, etc.)
+# ./data/           - Avatar data (wav2lip256_avatar, musetalk_avatar)
+# ./ml-fastvlm/     - FastVLM model for visual perception
 ```
 
-**Required structure:**
+**Required structure after extraction:**
 ```
-Avatar-ITRI/
+Avatar-V2/
 ├── models/
 │   ├── wav2lip.pth
 │   ├── musetalkV15/
@@ -61,14 +81,17 @@ Avatar-ITRI/
 │   └── avatars/
 │       ├── wav2lip256_avatar/
 │       └── musetalk_avatar/
+├── ml-fastvlm/
+│   ├── llava-fastvithd_0.5b_stage3/
+│   └── ...
 └── app.py
 ```
 
 ### 3. Create Conda Environment
 ```bash
 # Create new conda environment
-conda create -n avatar-itri python=3.10 -y
-conda activate avatar-itri
+conda create -n avatar-v2 python=3.10 -y
+conda activate avatar-v2
 
 # Install PyTorch with CUDA support
 conda install pytorch==2.5.0 torchvision==0.20.0 torchaudio==2.5.0 pytorch-cuda=12.4 -c pytorch -c nvidia
@@ -77,8 +100,8 @@ conda install pytorch==2.5.0 torchvision==0.20.0 torchaudio==2.5.0 pytorch-cuda=
 pip install -r requirements.txt
 ```
 
-### 4. Additional Dependencies for MuseTalk
-If you plan to use the MuseTalk model, install these additional dependencies:
+### 4. Additional Dependencies for MuseTalk (Optional)
+If you plan to use the MuseTalk model for higher quality avatars:
 
 ```bash
 # Install MMDetection dependencies
@@ -103,34 +126,62 @@ python -c "import torch; print(f'CUDA available: {torch.cuda.is_available()}')"
 
 ## Usage
 
-### Running with Different Models
+### Basic Avatar System
 
-#### Wav2Lip (Recommended)
+#### Wav2Lip (Fast & Efficient)
 ```bash
-python app.py --transport webrtc --model wav2lip --avatar_id wav2lip256_avatar --REF_FILE zh-CN-XiaoxiaoNeural --listenport 8010
+python app.py --transport webrtc --model wav2lip --avatar_id wav2lip256_avatar --REF_FILE zh-CN-XiaoxiaoNeural --tts openaudio --listenport 8010
 ```
 
-#### MuseTalk (Advanced)
+#### MuseTalk (High Quality)
 ```bash
-python app.py --transport webrtc --model musetalk --avatar_id musetalk_avatar --REF_FILE zh-CN-XiaoxiaoNeural --listenport 8010
+python app.py --transport webrtc --model musetalk --avatar_id musetalk_avatar --REF_FILE zh-CN-XiaoxiaoNeural --tts openaudio --listenport 8010
+```
+
+### With Visual Perception (Enhanced Features)
+
+To enable visual perception for personalized avatar interactions:
+
+#### 1. Start Visual Perception API (Terminal 1)
+```bash
+python vision_api_multi_session.py
+# API will run on port 5004
+```
+
+#### 2. Start Avatar System (Terminal 2)
+```bash
+python app.py --transport webrtc --model wav2lip --avatar_id wav2lip256_avatar --REF_FILE zh-CN-XiaoxiaoNeural --tts openaudio --listenport 8010
 ```
 
 ### Accessing the Interface
 Open your browser and navigate to:
 - **Main Interface**: `http://localhost:8010/webrtcapi.html`
-- **Dashboard**: `http://localhost:8010/dashboard.html` (recommended)
+- **Dashboard (Recommended)**: `http://localhost:8010/dashboard.html`
+- **Visual Context API**: `http://localhost:5004/visual-context/{sessionid}` (for LLM integration)
 
 ### Command Line Parameters
-- `--model`: Choose between `wav2lip` (recommended) or `musetalk`
+- `--model`: Choose between `wav2lip` (fast) or `musetalk` (high quality)
 - `--avatar_id`: Avatar to use (e.g., `wav2lip256_avatar`, `musetalk_avatar`)
 - `--REF_FILE`: TTS voice (see available voices below)
+- `--tts`: TTS engine (`openaudio` for emotional tags, `edgetts` for fallback)
 - `--listenport`: Server port (default: 8010)
 - `--batch_size`: Inference batch size (default: 16)
-- `--tts`: TTS engine (default: `edgetts`)
 
 ### Available TTS Voices
-- **English**: `en-GB-SoniaNeural` (Female, neutral)
-- **Chinese**: `zh-CN-XiaoxiaoNeural` (Female, Chinese)
+#### OpenAudio S1 (Recommended - with emotional tags)
+- **English**: `en-GB-SoniaNeural`
+- **Chinese**: `zh-CN-XiaoxiaoNeural`
+
+#### EdgeTTS (Fallback)
+- **English**: `en-GB-SoniaNeural` 
+- **Chinese**: `zh-CN-XiaoxiaoNeural`
+
+### Emotional Tags (OpenAudio S1)
+Use emotional tags for enhanced speech expression:
+- `(excited)` - Energetic, enthusiastic tone
+- `(calm)` - Peaceful, relaxed tone  
+- `(confused)` - Uncertain, questioning tone
+- `(regretful)` - Apologetic, sorry tone
 
 ## Creating Custom Avatars
 
@@ -139,94 +190,117 @@ Open your browser and navigate to:
 cd wav2lip
 python genavatar.py --video_path /path/to/your/video.mp4 --img_size 256 --avatar_id your_avatar_name
 
-# After running, copy the generated files to the data folder:
+# Copy generated files to data folder
 cp -r results/avatars/your_avatar_name ../data/avatars/
 ```
 
 ### For MuseTalk
 ```bash
 python genavatar_musetalk.py --file /path/to/your/video.mp4 --avatar_id your_musetalk_avatar
-
-# The files are automatically generated in the data/avatars/ folder
+# Files are automatically saved to data/avatars/
 ```
 
-**Requirements for source videos:**
+**Video Requirements:**
 - **Duration**: 10-60 seconds
 - **Quality**: HD (1080p recommended)
 - **Content**: Clear frontal face view
 - **Lighting**: Good, consistent lighting
 - **Background**: Static or minimal movement
 
-**After avatar generation:**
-For Wav2Lip avatars, make sure to copy the generated files from `results/avatars/` to the `data/avatars/` folder of the project.
-
 ## API Endpoints
 
-### WebRTC Connection
+### Avatar System
 - `POST /offer` - Establish WebRTC connection
 - `POST /human` - Send text for avatar to speak
 - `POST /interrupt_talk` - Stop current speech
 - `POST /is_speaking` - Check if avatar is speaking
-
-### Audio Processing
 - `POST /humanaudio` - Upload audio file
 - `POST /process_voice` - Process voice with Whisper ASR
-- `POST /process_voice_blob` - Process audio blob
 
-### Controls
-- `POST /set_audiotype` - Switch to custom video
-- `POST /record` - Start/stop recording
+### Visual Perception API (Port 5004)
+- `GET /visual-context/{sessionid}` - Get visual analysis for session
+- `GET /sessions` - List all active sessions with vision enabled
 
-## ⚙️ Configuration
-
-### TTS Configuration
-The system uses EdgeTTS by default with the following voice options:
-
-```bash
-# English voice (default)
---REF_FILE en-US-AriaNeural
-
-# Chinese voice
---REF_FILE zh-CN-XiaoxiaoNeural
-
-# Friendly English voice
---REF_FILE en-US-JennyNeural
+Example visual context response:
+```json
+{
+  "sessionid": "123456",
+  "visual_context": "Young female, mid-20s, wearing blue sweater, smiling, in bright office environment",
+  "available": true
+}
 ```
 
-## 🔧 Troubleshooting
+## System Performance
+
+| Model     | VRAM Usage | Processing Speed | Quality Level | Best Use Case |
+|-----------|------------|------------------|---------------|---------------|
+| Wav2Lip   | ~2GB       | 25 FPS          | Good          | Fast response, efficiency |
+| MuseTalk  | ~6GB       | 15-20 FPS       | Excellent     | High quality, presentations |
+
+### Performance Metrics
+- **Video Output**: 25 FPS real-time generation
+- **Total Latency**: <200ms pipeline processing
+- **Concurrent Sessions**: Multiple user support
+- **Browser Compatibility**: Chrome, Firefox, Safari
+
+## Technical Architecture
+
+### Processing Pipeline
+1. **User Input** → ASR (Whisper) → Text Processing
+2. **Visual Analysis** → FastVLM → Context API
+3. **Text** → TTS (OpenAudio S1/EdgeTTS) → Audio Stream
+4. **Audio + Context** → Avatar Model → Generated Frames
+5. **Generated Video** → WebRTC → Browser Client
+
+### Threading Architecture
+- **Thread 1**: WebRTC Streaming
+- **Thread 2**: TTS Processing (OpenAudio S1)
+- **Thread 3**: Feature Extraction (Mel/Whisper)
+- **Thread 4**: Neural Inference (Wav2Lip/MuseTalk)
+- **Thread 5**: Video Rendering & Encoding
+
+## Troubleshooting
 
 ### Common Issues
 
 **CUDA Out of Memory**
 ```bash
-# Reduce batch size
-python app.py --batch_size 8 --model musetalk
+# For MuseTalk, reduce batch size
+python app.py --model musetalk --batch_size 8
+
+# Or use Wav2Lip for lower memory usage
+python app.py --model wav2lip
 ```
 
 **Model Loading Errors**
-- Verify `Avatar.zip` was extracted correctly
-- Check file permissions: `chmod -R 755 models/ data/`
-- Ensure sufficient disk space (>10GB)
+- Verify Avatar-V2.zip was extracted correctly
+- Check file permissions: `chmod -R 755 models/ data/ ml-fastvlm/`
+- Ensure sufficient disk space (>20GB)
 
-## System Requirements by Model
+**Visual Perception Not Working**
+- Ensure `python vision_api_multi_session.py` is running on port 5004
+- Check that FastVLM models are properly extracted in `ml-fastvlm/`
+- Verify webcam permissions in browser
 
-| Model     | VRAM    | Processing | Quality | Speed |
-|-----------|---------|------------|---------|-------|
-| Wav2Lip   | 4GB     | Light      | Good    | Fast  |
-| MuseTalk  | 8GB+    | Heavy      | Excellent| Medium|
+**Audio Quality Issues**
+- Try switching between `--tts openaudio` and `--tts edgetts`
+- Check microphone permissions and quality
+- Ensure proper audio codec support
 
-## Technical Details
+### Performance Optimization
+- Use Wav2Lip for faster processing with limited GPU memory
+- Use MuseTalk for presentations requiring high visual quality  
+- Enable visual perception only when personalization is needed
+- Monitor GPU memory usage with `nvidia-smi`
 
-### Processing Pipeline
-1. **Text Input** → TTS Engine → Audio Stream (16kHz, 20ms chunks)
-2. **Audio Stream** → ASR → Audio Features (Mel/Whisper)
-3. **Features + Avatar** → AI Model → Generated Frames
-4. **Generated Frames** → Face Blending → Final Video
-5. **Video + Audio** → WebRTC → Browser Client
+## Contributing
 
-### Model Specifications
-- **Wav2Lip**: 256x256 resolution, mel-spectrogram features
-- **MuseTalk**: Diffusion-based, Whisper features, advanced blending
-- **Frame Rate**: 25 FPS video, 50 FPS audio processing
-- **Latency**: <200ms total pipeline latency
+For questions, suggestions, or contributions, please open an issue or submit a pull request.
 
+## License
+
+This project is developed for ITRI (Industrial Technology Research Institute) educational and demonstration purposes.
+
+---
+
+**Powered by OpenAudio S1 + FastVLM + WebRTC | Built for ITRI Avatar Technology 🎭**

@@ -1,6 +1,7 @@
-# Archivos pesados - descargar Avatar.zip
+# Archivos pesados - descargar Avatar-V2.zip
 models/
 data/
+ml-fastvlm/
 
 # Results and outputs
 wav2lip/results/
