@@ -14,8 +14,7 @@ Advanced real-time digital avatar system supporting both **Wav2Lip** and **MuseT
 
 ## Demo Videos
 
-- **[Computer Demo](https://drive.google.com/file/d/1WrXx5Y-3J9XJqXYNcAm7M0gXu_baWb_j/view?usp=sharing)** - Desktop browser experience
-- **[Mobile Demo](https://drive.google.com/file/d/192REA6hSZonl06c3n_UwN0B8jWGQWO3u/view?usp=sharing)** - Mobile device experience
+**[View Demo Videos](https://drive.google.com/drive/folders/1Jk3QjjG2c5-Ah3EKlVCbWPb0BFR18lRb?usp=drive_link)**
 
 ## Features
 
@@ -59,7 +58,7 @@ cd ITRI_chatbot/Avatar-V2
 Download the Avatar-V2.zip file containing the required models, data, and FastVLM components:
 
 ```bash
-# Download Avatar-V2.zip from [LINK TO BE PROVIDED]
+# Download Avatar-V2.zip from https://drive.google.com/file/d/17C1GFOqsdqjZ42EyMotdN3OXh5vjyFUx/view?usp=sharing
 # Extract the file to get these folders:
 unzip Avatar-V2.zip
 # This will create:
@@ -150,7 +149,7 @@ python vision_api_multi_session.py
 
 #### 2. Start Avatar System (Terminal 2)
 ```bash
-python app.py --transport webrtc --model wav2lip --avatar_id wav2lip256_avatar --REF_FILE zh-CN-XiaoxiaoNeural --tts openaudio --listenport 8010
+python app.py --transport webrtc --model musetalk --avatar_id musetalk_DLee --listenport 8010 --tts openaudio
 ```
 
 ### Accessing the Interface
