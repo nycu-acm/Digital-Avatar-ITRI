@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FastVLM Vision Testing Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            max-width: 900px;
+            width: 90%;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 2.2em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .video-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        #videoElement {
+            width: 100%;
+            max-width: 640px;
+            height: auto;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            background: #000;
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+            justify-content: center;
+            margin-top: 20px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 15px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .control-group label {
+            font-weight: 600;
+            color: #333;
+            font-size: 0.9em;
+        }
+
+        input[type="range"] {
+            width: 150px;
+            accent-color: #667eea;
+        }
+
+        input[type="number"] {
+            width: 80px;
+            padding: 5px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 1em;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            font-weight: 600;
+        }
+
+        .status.success {
+            background: rgba(76, 175, 80, 0.1);
+            color: #4CAF50;
+            border-left: 4px solid #4CAF50;
+        }
+
+        .status.error {
+            background: rgba(244, 67, 54, 0.1);
+            color: #F44336;
+            border-left: 4px solid #F44336;
+        }
+
+        .status.info {
+            background: rgba(33, 150, 243, 0.1);
+            color: #2196F3;
+            border-left: 4px solid #2196F3;
+        }
+
+        .analysis-counter {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 1.2em;
+            color: #333;
+        }
+
+        .last-analysis {
+            background: rgba(0, 0, 0, 0.05);
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            line-height: 1.4;
+            color: #333;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .stat-card h3 {
+            color: #667eea;
+            font-size: 1.5em;
+            margin-bottom: 5px;
+        }
+
+        .stat-card p {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        @media (max-width: 768px) {
+            .controls {
+                flex-direction: column;
+            }
+            
+            .header h1 {
+                font-size: 1.8em;
+            }
+            
+            .container {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 FastVLM Vision Testing</h1>
+            <p>Real-time visual perception testing for Digital Avatar</p>
+        </div>
+
+        <div class="video-section">
+            <video id="videoElement" autoplay muted playsinline></video>
+            
+            <div class="controls">
+                <div class="control-group">
+                    <label for="intervalSlider">Analysis Interval (seconds)</label>
+                    <input type="range" id="intervalSlider" min="1" max="15" value="5" step="1">
+                    <input type="number" id="intervalInput" min="1" max="15" value="5" step="1">
+                </div>
+                
+                <button id="startBtn" class="btn">🚀 Start Analysis</button>
+                <button id="stopBtn" class="btn" disabled>⏹️ Stop Analysis</button>
+                <button id="captureBtn" class="btn">📸 Single Capture</button>
+            </div>
+        </div>
+
+        <div id="statusDisplay" class="status info">
+            <span>📡 Initializing camera...</span>
+        </div>
+
+        <div class="analysis-counter">
+            <strong>Analyses Completed: <span id="analysisCount">0</span></strong>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <h3 id="queuedCount">0</h3>
+                <p>Images Queued</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="processedCount">0</h3>
+                <p>Images Processed</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="droppedCount">0</h3>
+                <p>Images Dropped</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="lastTime">0.0s</h3>
+                <p>Last Processing Time</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="queueDelay">0.0s</h3>
+                <p>Queue Delay</p>
+            </div>
+        </div>
+
+        <div class="last-analysis">
+            <strong>Last Analysis Result:</strong><br>
+            <div id="lastAnalysisText">No analysis performed yet. Click "Start Analysis" or "Single Capture" to begin.</div>
+        </div>
+    </div>
+
+    <script>
+        class VisionTester {
+            constructor() {
+                this.video = document.getElementById('videoElement');
+                this.canvas = document.createElement('canvas');
+                this.ctx = this.canvas.getContext('2d');
+                
+                this.isAnalyzing = false;
+                this.analysisInterval = 5000; // 5 seconds
+                this.intervalTimer = null;
+                this.analysisCount = 0;
+                this.queuedCount = 0;
+                this.processedCount = 0;
+                this.droppedCount = 0;
+                this.lastProcessingTime = 0;
+                this.lastQueueDelay = 0;
+                
+                this.apiUrl = 'http://localhost:5003';
+                
+                this.initializeElements();
+                this.initializeCamera();
+            }
+            
+            initializeElements() {
+                this.statusDisplay = document.getElementById('statusDisplay');
+                this.startBtn = document.getElementById('startBtn');
+                this.stopBtn = document.getElementById('stopBtn');
+                this.captureBtn = document.getElementById('captureBtn');
+                this.intervalSlider = document.getElementById('intervalSlider');
+                this.intervalInput = document.getElementById('intervalInput');
+                this.analysisCountElement = document.getElementById('analysisCount');
+                this.lastAnalysisText = document.getElementById('lastAnalysisText');
+                this.queuedCountElement = document.getElementById('queuedCount');
+                this.processedCountElement = document.getElementById('processedCount');
+                this.droppedCountElement = document.getElementById('droppedCount');
+                this.lastTimeElement = document.getElementById('lastTime');
+                this.queueDelayElement = document.getElementById('queueDelay');
+                
+                // Event listeners
+                this.startBtn.addEventListener('click', () => this.startAnalysis());
+                this.stopBtn.addEventListener('click', () => this.stopAnalysis());
+                this.captureBtn.addEventListener('click', () => this.singleCapture());
+                
+                // Sync slider and input
+                this.intervalSlider.addEventListener('input', (e) => {
+                    this.intervalInput.value = e.target.value;
+                    this.analysisInterval = e.target.value * 1000;
+                });
+                
+                this.intervalInput.addEventListener('input', (e) => {
+                    this.intervalSlider.value = e.target.value;
+                    this.analysisInterval = e.target.value * 1000;
+                });
+            }
+            
+            async initializeCamera() {
+                try {
+                    this.updateStatus('📡 Requesting camera access...', 'info');
+                    
+                    const stream = await navigator.mediaDevices.getUserMedia({
+                        video: { 
+                            width: { ideal: 640 },
+                            height: { ideal: 480 },
+                            facingMode: 'user'
+                        }
+                    });
+                    
+                    this.video.srcObject = stream;
+                    
+                    this.video.addEventListener('loadedmetadata', () => {
+                        this.canvas.width = this.video.videoWidth;
+                        this.canvas.height = this.video.videoHeight;
+                        this.updateStatus('✅ Camera initialized successfully!', 'success');
+                        console.log(`Camera resolution: ${this.video.videoWidth}x${this.video.videoHeight}`);
+                    });
+                    
+                } catch (error) {
+                    console.error('Camera initialization failed:', error);
+                    this.updateStatus('❌ Camera access denied or not available', 'error');
+                }
+            }
+            
+            updateStatus(message, type = 'info') {
+                this.statusDisplay.textContent = message;
+                this.statusDisplay.className = `status ${type}`;
+                console.log(`[Status] ${message}`);
+            }
+            
+            captureFrame() {
+                if (!this.video.videoWidth || !this.video.videoHeight) {
+                    return null;
+                }
+                
+                // Draw current video frame to canvas
+                this.ctx.drawImage(this.video, 0, 0, this.canvas.width, this.canvas.height);
+                
+                // Convert to base64
+                return this.canvas.toDataURL('image/jpeg', 0.8);
+            }
+            
+            async queueImageForAnalysis(imageData) {
+                try {
+                    const response = await fetch(`${this.apiUrl}/analyze-vision`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            image: imageData
+                        })
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    
+                    const result = await response.json();
+                    
+                    // Update stats from queue response
+                    if (result.stats) {
+                        this.updateStatsFromQueue(result);
+                    }
+                    
+                    console.log(`Queued image ${result.image_id}, Processing: ${result.currently_processing}`);
+                    return result;
+                    
+                } catch (error) {
+                    console.error('Failed to queue image:', error);
+                    this.updateStatus(`❌ Queue failed: ${error.message}`, 'error');
+                    return null;
+                }
+            }
+            
+            async pollForResults() {
+                try {
+                    const response = await fetch(`${this.apiUrl}/status`);
+                    if (!response.ok) return;
+                    
+                    const data = await response.json();
+                    
+                    if (data.latest_result) {
+                        this.handleNewResult(data.latest_result);
+                    }
+                    
+                    if (data.stats) {
+                        this.updateStatsFromServer(data.stats);
+                    }
+                    
+                } catch (error) {
+                    console.error('Polling error:', error);
+                }
+            }
+            
+            updateStatsFromQueue(result) {
+                // Update counts from queue response
+                if (result.stats) {
+                    this.queuedCount = result.stats.total_received || 0;
+                    this.queuedCountElement.textContent = this.queuedCount;
+                }
+            }
+            
+            updateStatsFromServer(stats) {
+                // Update stats from server polling
+                this.processedCount = stats.total_processed || 0;
+                this.droppedCount = stats.total_dropped || 0;
+                
+                this.processedCountElement.textContent = this.processedCount;
+                this.droppedCountElement.textContent = this.droppedCount;
+                this.analysisCountElement.textContent = this.processedCount;
+            }
+            
+            handleNewResult(result) {
+                // Handle new analysis result
+                if (!result) return;
+                
+                this.lastProcessingTime = result.processing_time || 0;
+                this.lastQueueDelay = result.queue_delay || 0;
+                
+                this.lastTimeElement.textContent = `${this.lastProcessingTime.toFixed(2)}s`;
+                this.queueDelayElement.textContent = `${this.lastQueueDelay.toFixed(2)}s`;
+                
+                if (result.analysis) {
+                    this.lastAnalysisText.textContent = result.analysis;
+                    console.log(`New analysis result (ID: ${result.image_id})`);
+                }
+            }
+            
+            async singleCapture() {
+                this.updateStatus('📸 Capturing and queuing frame...', 'info');
+                
+                const imageData = this.captureFrame();
+                if (!imageData) {
+                    this.updateStatus('❌ Failed to capture frame', 'error');
+                    return;
+                }
+                
+                const result = await this.queueImageForAnalysis(imageData);
+                if (result && result.success) {
+                    this.updateStatus('✅ Image queued for analysis!', 'success');
+                } else {
+                    this.updateStatus('❌ Failed to queue image', 'error');
+                }
+            }
+            
+            async startAnalysis() {
+                if (this.isAnalyzing) return;
+                
+                this.isAnalyzing = true;
+                this.startBtn.disabled = true;
+                this.stopBtn.disabled = false;
+                this.captureBtn.disabled = true;
+                
+                this.updateStatus(`🚀 Real-time analysis started (every ${this.analysisInterval/1000}s)`, 'success');
+                
+                // Immediate first capture
+                await this.singleCapture();
+                
+                // Set up interval for continuous image queuing
+                this.intervalTimer = setInterval(async () => {
+                    if (!this.isAnalyzing) return;
+                    
+                    const imageData = this.captureFrame();
+                    if (imageData) {
+                        await this.queueImageForAnalysis(imageData);
+                    }
+                }, this.analysisInterval);
+                
+                // Set up polling for results
+                this.resultTimer = setInterval(() => {
+                    if (!this.isAnalyzing) return;
+                    this.pollForResults();
+                }, 1000); // Poll every second for results
+            }
+            
+            stopAnalysis() {
+                if (!this.isAnalyzing) return;
+                
+                this.isAnalyzing = false;
+                this.startBtn.disabled = false;
+                this.stopBtn.disabled = true;
+                this.captureBtn.disabled = false;
+                
+                if (this.intervalTimer) {
+                    clearInterval(this.intervalTimer);
+                    this.intervalTimer = null;
+                }
+                
+                if (this.resultTimer) {
+                    clearInterval(this.resultTimer);
+                    this.resultTimer = null;
+                }
+                
+                this.updateStatus('⏹️ Analysis stopped', 'info');
+            }
+        }
+        
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Initializing Vision Tester...');
+            new VisionTester();
+        });
+    </script>
+</body>
+</html>

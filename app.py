@@ -97,10 +97,12 @@ async def offer(request):
         if pc.connectionState == "failed":
             await pc.close()
             pcs.discard(pc)
-            del nerfreals[sessionid]
+            if sessionid in nerfreals:
+                del nerfreals[sessionid]
         if pc.connectionState == "closed":
             pcs.discard(pc)
-            del nerfreals[sessionid]
+            if sessionid in nerfreals:
+                del nerfreals[sessionid]
             gc.collect()
 
     player = HumanPlayer(nerfreals[sessionid])
@@ -138,7 +140,10 @@ async def human(request):
         if params['type']=='echo':
             nerfreals[sessionid].put_msg_txt(params['text'])
         elif params['type']=='chat':
-            asyncio.get_event_loop().run_in_executor(None, llm_response, params['text'],nerfreals[sessionid])                         
+            # Extract user_description if provided (for manual visual description or Vision API)
+            user_description = params.get('user_description', None)
+            # Pass user_description to llm_response
+            asyncio.get_event_loop().run_in_executor(None, llm_response, params['text'], nerfreals[sessionid], user_description)                         
             #nerfreals[sessionid].put_msg_txt(res)
 
         return web.Response(
@@ -531,7 +536,7 @@ if __name__ == '__main__':
     #musetalk opt
     parser.add_argument('--avatar_id', type=str, default='avator_1', help="define which avatar in data/avatars")
     #parser.add_argument('--bbox_shift', type=int, default=5)
-    parser.add_argument('--batch_size', type=int, default=16, help="infer batch")
+    parser.add_argument('--batch_size', type=int, default=32, help="infer batch")
 
     parser.add_argument('--customvideo_config', type=str, default='', help="custom action json")
 

@@ -139,6 +139,158 @@ class EdgeTTS(BaseTTS):
             logger.exception('edgetts')
 
 ###########################################################################################
+class OpenAudioTTS(BaseTTS):
+    def __init__(self, opt, parent):
+        super().__init__(opt, parent)
+        # Import Fish Audio SDK
+        from fish_audio_sdk import Session, TTSRequest
+        from fish_audio_sdk.exceptions import HttpCodeErr
+        self.Session = Session
+        self.TTSRequest = TTSRequest
+        self.HttpCodeErr = HttpCodeErr
+        # API key from environment or opt
+        self.api_key = "c325a2da0e9046fda39b0498f4580a87"
+        # Fish Audio uses different model system than EdgeTTS
+        # Use specific female voice model for avatar
+        #self.reference_id = "933563129e564b19a115bedd57b7406a"  # Female voice from fish.audio
+        #self.reference_id = "5c353fdb312f4888836a9a5680099ef0"  # Chinese Female voice from fish.audio
+        self.reference_id = "1e666f4022ef4385b501babc77513364"  # Prof
+
+    def _optimize_speech_parameters(self, text):
+        """Optimize parameters for better emotional expression"""
+        # Emotion density analysis
+        emotion_count = len([word for word in text.split() if word.startswith('(') and word.endswith(')')])
+        text_length = len(text)
+        
+        # Adjust parameters based on content
+        if emotion_count > 0:
+            # More emotions = lower temperature for consistency
+            temperature = max(0.3, 0.7 - (emotion_count * 0.1))
+            top_p = 0.6  # Focused for emotion recognition
+            chunk_length = min(150, max(100, text_length // 3))  # Smaller chunks for emotions (min 100)
+        else:
+            # Regular speech
+            temperature = 0.7
+            top_p = 0.7
+            chunk_length = 100
+            
+        logger.info(f"[OpenAudio] Optimized params: temp={temperature}, top_p={top_p}, chunk_len={chunk_length}")
+        return temperature, top_p, chunk_length
+        
+    def txt_to_audio(self, msg):
+        text, textevent = msg
+        t = time.time()
+        
+        # Process text with emotional tags as-is (LLM already includes them)
+        logger.info(f'[OpenAudio] Processing text: "{text}"')
+        logger.info(f'[OpenAudio] Using reference_id: {self.reference_id}')
+        logger.info(f'[OpenAudio] Using OpenAudio S1 (4B parameters) backend')
+        
+        try:
+            # Create Session (not WebSocket) like EdgeTTS
+            session = self.Session(self.api_key)
+            
+            # Optimize parameters based on text content
+            temperature, top_p, chunk_length = self._optimize_speech_parameters(text)
+            
+            # Create TTS request with optimized parameters
+            request_params = {
+                "text": text,
+                "format": "pcm",
+                "sample_rate": 16000,  # Official 16kHz support confirmed
+                "chunk_length": chunk_length,  # Optimized for content
+                "normalize": True,     # Text normalization
+                "temperature": temperature,  # Optimized for emotions
+                "top_p": top_p,       # Optimized for consistency
+                "prosody": {"speed": 1, "volume": 0},  # Slower speech (80% speed)
+            }
+            
+            # Add reference_id only if available
+            if self.reference_id:
+                request_params["reference_id"] = self.reference_id
+            
+            request = self.TTSRequest(**request_params)
+            
+            # Stream audio chunks using OpenAudio S1 (4B) model with emotional tag support
+            logger.info(f'[OpenAudio] Starting TTS generation with S1 backend...')
+            for audio_chunk in session.tts(request, backend="s1"):
+                if audio_chunk and self.state == State.RUNNING:
+                    self.input_stream.write(audio_chunk)
+                        
+        except self.HttpCodeErr as e:
+            # Fix: HttpCodeErr might use different attribute names
+            status_code = getattr(e, 'status_code', getattr(e, 'code', None))
+            if status_code == 429:
+                logger.error('OpenAudio API rate limit exceeded')
+            elif status_code == 401:
+                logger.error('OpenAudio API key invalid')
+            elif status_code == 400:
+                logger.error(f'OpenAudio bad request - check parameters: {e}')
+            elif status_code == 413:
+                logger.error('OpenAudio text too large')
+            else:
+                logger.error(f'OpenAudio HTTP error {status_code}: {e}')
+            return
+        except Exception as e:
+            logger.exception('openaudio tts error')
+            return
+            
+        logger.info(f'-------openaudio tts time:{time.time()-t:.4f}s')
+        
+        if self.input_stream.getbuffer().nbytes <= 0:
+            logger.error('openaudio tts err!!!!!')
+            return
+        
+        # IDENTICAL post-processing as EdgeTTS
+        self.input_stream.seek(0)
+        stream = self.__create_bytes_stream(self.input_stream)
+        streamlen = stream.shape[0]
+        idx = 0
+        while streamlen >= self.chunk and self.state == State.RUNNING:
+            eventpoint = None
+            streamlen -= self.chunk
+            if idx == 0:
+                eventpoint = {'status': 'start', 'text': text, 'msgevent': textevent}
+            elif streamlen < self.chunk:
+                eventpoint = {'status': 'end', 'text': text, 'msgevent': textevent}
+            self.parent.put_audio_frame(stream[idx:idx+self.chunk], eventpoint)
+            idx += self.chunk
+            
+        self.input_stream.seek(0)
+        self.input_stream.truncate()
+    
+    def __create_bytes_stream(self, byte_stream):
+        # Fish Audio returns PCM raw bytes, handle properly
+        byte_stream.seek(0)
+        raw_bytes = byte_stream.read()
+        
+        # Force treat as PCM raw 16-bit signed integers at 16kHz
+        import struct
+        sample_count = len(raw_bytes) // 2
+        
+        if sample_count == 0:
+            logger.error('[OpenAudio] Empty audio data received')
+            return np.array([], dtype=np.float32)
+        
+        try:
+            # PCM 16-bit signed, little-endian
+            stream = np.array(struct.unpack(f'<{sample_count}h', raw_bytes), dtype=np.float32)
+            # Normalize from int16 range (-32768, 32767) to float32 (-1.0, 1.0)
+            stream = stream / 32768.0
+            sample_rate = 16000  # Fish Audio PCM sample rate
+            logger.info(f'[INFO]tts audio stream (PCM raw) {sample_rate}: {stream.shape}')
+        except struct.error as e:
+            logger.error(f'[OpenAudio] PCM parsing error: {e}')
+            return np.array([], dtype=np.float32)
+        
+        # Handle resampling if needed
+        if sample_rate != self.sample_rate and stream.shape[0] > 0:
+            logger.info(f'[WARN] audio sample rate is {sample_rate}, resampling into {self.sample_rate}.')
+            stream = resampy.resample(x=stream, sr_orig=sample_rate, sr_new=self.sample_rate)
+
+        return stream
+
+###########################################################################################
 class FishTTS(BaseTTS):
     def txt_to_audio(self,msg): 
         text,textevent = msg
