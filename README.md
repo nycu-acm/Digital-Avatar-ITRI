@@ -233,10 +233,10 @@ Example visual context response:
 
 ## System Performance
 
-| Model     | VRAM Usage | Processing Speed | Quality Level | Best Use Case |
-|-----------|------------|------------------|---------------|---------------|
-| Wav2Lip   | ~2GB       | 25 FPS          | Good          | Fast response, efficiency |
-| MuseTalk  | ~6GB       | 15-20 FPS       | Excellent     | High quality, presentations |
+| Model     | VRAM Usage | Processing Speed | Quality Level | 
+|-----------|------------|------------------|---------------|
+| Wav2Lip   | ~2GB       | 25 FPS          | Good          | 
+| MuseTalk  | ~6GB       | 25 FPS          | Excellent     |
 
 ### Performance Metrics
 - **Video Output**: 25 FPS real-time generation
