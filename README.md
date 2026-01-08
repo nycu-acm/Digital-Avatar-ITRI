@@ -54,8 +54,9 @@ git clone https://github.com/HelloHe110/ITRI_chatbot.git
 cd ITRI_chatbot/Avatar-V2
 ```
 
-### 2. Download Required Files
-Download the Avatar-V2.zip file containing the required models, data, and FastVLM components:
+### 2. Download Models and Data
+Download the `Avatar.zip` file containing the required models and avatar data: https://drive.google.com/file/d/1bCIsmzhIvMsOgcwb3v5vKe9io5e8KHui/view?usp=sharing
+Extract it in the project root directory:
 
 ```bash
 # Download Avatar-V2.zip from https://drive.google.com/file/d/17C1GFOqsdqjZ42EyMotdN3OXh5vjyFUx/view?usp=sharing
@@ -231,10 +232,10 @@ Example visual context response:
 
 ## System Performance
 
-| Model     | VRAM Usage | Processing Speed | Quality Level | Best Use Case |
-|-----------|------------|------------------|---------------|---------------|
-| Wav2Lip   | ~2GB       | 25 FPS          | Good          | Fast response, efficiency |
-| MuseTalk  | ~6GB       | 15-20 FPS       | Excellent     | High quality, presentations |
+| Model     | VRAM Usage | Processing Speed | Quality Level | 
+|-----------|------------|------------------|---------------|
+| Wav2Lip   | ~2GB       | 25 FPS          | Good          | 
+| MuseTalk  | ~6GB       | 25 FPS          | Excellent     |
 
 ### Performance Metrics
 - **Video Output**: 25 FPS real-time generation
